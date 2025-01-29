@@ -35,7 +35,7 @@ KOSTKA_ZIELONA = ['króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'k
 KOSTKA_CZERWONA = ['króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'świnie', 'świnie', 'owce', 'owce', 'koń', 'lis']
 
 # Funkcja inicjalizująca grę
-def init_game(mode="ai"):
+def init_game(mode):
     session['stado_glowne'] = STADO_GLOWNE.copy()
     session['gracz1'] = {'króliki': 1, 'owce': 0, 'świnie': 0, 'krowy': 0, 'konie': 0, 'małe psy': 0, 'duże psy': 0}
     session['gracz2'] = {'króliki': 1, 'owce': 0, 'świnie': 0, 'krowy': 0, 'konie': 0, 'małe psy': 0, 'duże psy': 0}
@@ -178,10 +178,11 @@ def sprawdz_wygrana(gracz):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    mode = request.form.get('game_mode', 'wybor')  # Default to human vs. human
     if 'stado_glowne' not in session or 'restart' in request.form:
-        mode = request.form.get('game_mode', 'ai')  # Default to human vs. human
         session.clear()
-        init_game(mode)
+        if mode in ["human", "ai"]:
+            init_game(mode)
 
     # Ustawienie domyślnych wartości
     if 'wymiana_wykonana' not in session:
@@ -216,19 +217,27 @@ def index():
             aktualny_gracz = session['aktualny_gracz']
             wymiana(aktualny_gracz, z, na)
             session['wymiana_wykonana'] = True
+    
+    if mode == "wybor":
+        return render_template('index.html', game_mode="wybor")
 
-    return render_template(
-        'index.html',
-        stado_glowne=session['stado_glowne'],
-        gracz1=session['gracz1'],
-        gracz2=session['gracz2'],
-        aktualny_gracz=session['aktualny_gracz'],
-        ostatni_rzut=session.get('ostatni_rzut'),
-        wymiana_wykonana=session['wymiana_wykonana'],
-        mozliwe_wymiany=generuj_opcje_wymian(session['aktualny_gracz']),
-        wygrana=session['wygrana'],
-       
-    )
+    # Render the game screen only when mode is human or AI
+    if mode in ["human", "ai"]:
+        return render_template(
+            'index.html',
+            game_mode=session['game_mode'],
+            stado_glowne=session.get('stado_glowne', {}),
+            gracz1=session.get('gracz1', {}),
+            gracz2=session.get('gracz2', {}),
+            aktualny_gracz=session.get('aktualny_gracz', 1),
+            ostatni_rzut=session.get('ostatni_rzut'),
+            wymiana_wykonana=session.get('wymiana_wykonana', False),
+            mozliwe_wymiany=generuj_opcje_wymian(session.get('aktualny_gracz', 1)),
+            wygrana=session.get('wygrana'),
+        )
+
+    # Default: Go back to the selection screen
+    return render_template('index.html', game_mode="wybor")
 
 @app.route('/restart')
 def restart():
