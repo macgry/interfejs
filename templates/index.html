@@ -53,6 +53,18 @@
 <body>
     <h1>Superfarmer</h1>
 
+    {% if game_mode == "wybor" %}
+    <div class="container">
+        <h2>Wybierz tryb gry:</h2>
+        <form method="POST">
+            <button type="submit" name="game_mode" value="human">Gra z drugim graczem</button>
+            <button type="submit" name="game_mode" value="ai">Gra z komputerem</button>
+        </form>
+    </div>
+    {% else %}
+
+    <h2>Tryb gry: {{ "Dwóch graczy" if game_mode == "human" else "Gracz vs Komputer" }}</h2>
+
     <div class="container">
         <h2>Stado Główne</h2>
         <div>
@@ -94,6 +106,8 @@
             {% endfor %}
         </div>
     </div>
+    {% endif %}
+  
     
 
     <form method="POST">

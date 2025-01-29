@@ -35,18 +35,39 @@ KOSTKA_ZIELONA = ['króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'k
 KOSTKA_CZERWONA = ['króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'króliki', 'świnie', 'świnie', 'owce', 'owce', 'koń', 'lis']
 
 # Funkcja inicjalizująca grę
-def init_game():
+def init_game(mode="ai"):
     session['stado_glowne'] = STADO_GLOWNE.copy()
     session['gracz1'] = {'króliki': 1, 'owce': 0, 'świnie': 0, 'krowy': 0, 'konie': 0, 'małe psy': 0, 'duże psy': 0}
     session['gracz2'] = {'króliki': 1, 'owce': 0, 'świnie': 0, 'krowy': 0, 'konie': 0, 'małe psy': 0, 'duże psy': 0}
     session['aktualny_gracz'] = 1
     session['ostatni_rzut'] = None
+    session['game_mode'] = mode 
 
 # Funkcja do rzutu kostkami
 def rzuc_kostkami():
     wynik_zielona = random.choice(KOSTKA_ZIELONA)
     wynik_czerwona = random.choice(KOSTKA_CZERWONA)
     return wynik_zielona, wynik_czerwona
+
+def ai_turn():
+    if session['game_mode'] == "ai" and session['aktualny_gracz'] == 2:
+        # AI makes an optimal exchange
+        mozliwe_wymiany = generuj_opcje_wymian(2)
+        if mozliwe_wymiany:
+            best_trade = mozliwe_wymiany[0]  # AI selects the first available trade
+            wymiana(2, best_trade[0], best_trade[1])
+
+        # AI rolls the dice
+        wynik_zielona, wynik_czerwona = rzuc_kostkami()
+        wykonaj_ruch(2, wynik_zielona, wynik_czerwona)
+        session['ostatni_rzut'] = (wynik_zielona, wynik_czerwona)
+
+        # Check for victory
+        if sprawdz_wygrana(2):
+            session['wygrana'] = 2
+        else:
+            session['aktualny_gracz'] = 1  # Return turn to player
+
 
 def wykonaj_ruch(gracz, wynik_zielona, wynik_czerwona):
     stado = session[f'gracz{gracz}']
@@ -158,8 +179,9 @@ def sprawdz_wygrana(gracz):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'stado_glowne' not in session or 'restart' in request.form:
-        session.clear()  # Resetuje całą sesję
-        init_game()  # Inicjalizuje nową grę
+        mode = request.form.get('game_mode', 'ai')  # Default to human vs. human
+        session.clear()
+        init_game(mode)
 
     # Ustawienie domyślnych wartości
     if 'wymiana_wykonana' not in session:
@@ -172,16 +194,19 @@ def index():
         wynik_zielona, wynik_czerwona = rzuc_kostkami()
         wykonaj_ruch(aktualny_gracz, wynik_zielona, wynik_czerwona)
 
-        # Zapisujemy rzut do wyświetlenia
         session['ostatni_rzut'] = (wynik_zielona, wynik_czerwona)
 
-        # Sprawdzamy, czy gracz wygrał
         if sprawdz_wygrana(aktualny_gracz):
             session['wygrana'] = aktualny_gracz
         else:
-            # Zmiana gracza po rzucie
             session['aktualny_gracz'] = 2 if aktualny_gracz == 1 else 1
             session['wymiana_wykonana'] = False
+
+        print(session['game_mode'])
+        print(session['aktualny_gracz'])
+        # If AI's turn, execute its move
+        if session['game_mode'] == "ai" and session['aktualny_gracz'] == 2:
+            ai_turn()
 
 
     elif request.method == 'POST' and 'wymiana' in request.form and not session['wymiana_wykonana'] and session['wygrana'] is None:
@@ -201,7 +226,8 @@ def index():
         ostatni_rzut=session.get('ostatni_rzut'),
         wymiana_wykonana=session['wymiana_wykonana'],
         mozliwe_wymiany=generuj_opcje_wymian(session['aktualny_gracz']),
-        wygrana=session['wygrana']
+        wygrana=session['wygrana'],
+       
     )
 
 @app.route('/restart')
