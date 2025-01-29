@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superfarmer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e8f5e9; /* Jasnozielone tło */
+            color: #2e7d32; /* Zielona czcionka */
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #1b5e20;
+        }
+        .container {
+            display: inline-block;
+            text-align: left;
+            background: white;
+            border: 2px solid #2e7d32;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .animal {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        img {
+            width: 100px;
+            height: auto;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Superfarmer</h1>
+
+    <div class="container">
+        <h2>Stado Główne</h2>
+        <div>
+            {% for animal in ['króliki', 'owce', 'świnie', 'krowy', 'konie', 'małe psy', 'duże psy'] %}
+                {% if animal in stado_glowne %}
+                    <div class="animal">
+                        <img src="{{ url_for('static', filename='images/' + animal + '.png') }}" alt="{{ animal }}">
+                        <p>{{ stado_glowne[animal] }} {{ animal }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Gracz 1</h2>
+        <div>
+            {% for animal in ['króliki', 'owce', 'świnie', 'krowy', 'konie', 'małe psy', 'duże psy'] %}
+                {% if animal in gracz1 %}
+                    <div class="animal">
+                        <img src="{{ url_for('static', filename='images/' + animal + '.png') }}" alt="{{ animal }}">
+                        <p>{{ gracz1[animal] }} {{ animal }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Gracz 2</h2>
+        <div>
+            {% for animal in ['króliki', 'owce', 'świnie', 'krowy', 'konie', 'małe psy', 'duże psy'] %}
+                {% if animal in gracz2 %}
+                    <div class="animal">
+                        <img src="{{ url_for('static', filename='images/' + animal + '.png') }}" alt="{{ animal }}">
+                        <p>{{ gracz2[animal] }} {{ animal }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+
+    <form method="POST">
+        {% if wygrana %}
+        <h2 style="color: green;">🎉 Gracz {{ wygrana }} wygrał! 🎉</h2>
+    {% else %}
+    <h2>Aktualny gracz: Gracz {{ aktualny_gracz }}</h2>
+
+    {% if ostatni_rzut %}
+    <h3>Ostatni rzut kostkami</h3>
+    <div style="display: flex; justify-content: center; gap: 20px;">
+        {% set mapa_nazw = {'krowa': 'krowy', 'koń': 'konie'} %}
+        
+        <!-- Zielona kostka -->
+        <div style="border: 5px solid green; padding: 10px; text-align: center;">
+            <h4>Zielona kostka</h4>
+            {% set nazwa = mapa_nazw.get(ostatni_rzut[0], ostatni_rzut[0]) %}
+            <img src="{{ url_for('static', filename='images/' + nazwa + '.png') }}" alt="{{ ostatni_rzut[0] }}" style="width: 80px;">
+            <p>{{ ostatni_rzut[0] }}</p>
+        </div>
+
+        <!-- Czerwona kostka -->
+        <div style="border: 5px solid red; padding: 10px; text-align: center;">
+             <h4>Czerwona kostka</h4>
+             {% set nazwa = mapa_nazw.get(ostatni_rzut[1], ostatni_rzut[1]) %}
+             <img src="{{ url_for('static', filename='images/' + nazwa + '.png') }}" alt="{{ ostatni_rzut[1] }}" style="width: 80px;">
+            <p>{{ ostatni_rzut[1] }}</p>
+        </div>
+        </div>
+    {% endif %}
+
+    
+        <form method="POST">
+            <button type="submit" name="rzut">Rzuć kostkami</button>
+        </form>
+    
+        <h3>Możliwe wymiany</h3>
+        {% if wymiana_wykonana %}
+            <p>Wymiana została już wykonana w tej rundzie.</p>
+        {% elif mozliwe_wymiany %}
+            <form method="POST">
+                {% for z, na, ilosc, ilosc_otrzymana in mozliwe_wymiany %}
+                <button type="submit" name="wymiana" value="{{ z }}-{{ na }}">
+                    {{ ilosc }} {{ z }} → {{ ilosc_otrzymana }} {{ na }}
+                </button>
+            {% endfor %}
+            
+            </form>
+        {% else %}
+            <p>Brak dostępnych wymian</p>
+        {% endif %}
+    {% endif %}
+    
+    </form>
+    
+    <form method="POST">
+        <button type="submit" name="restart">Restartuj grę</button>
+    </form>
+    
+    
+</body>
+</html>
